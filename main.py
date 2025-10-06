@@ -23,7 +23,6 @@ def get_weather(city_name):
         print(f"Произошла ошибка: {err}")
 
 if __name__ == "__main__":
-    a = 5
-    # Запрашиваем у пользователя название города
+    a = 6
     city = input("Введите название города: ")
     get_weather(city)
