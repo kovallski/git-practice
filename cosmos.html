@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Cosmic • Красивая космическая страница</title>
+  <meta name="description" content="Одностраничный сайт в космическом стиле с анимацией звёздного неба и неоновыми акцентами." />
+  <style>
+    :root {
+      --bg-1: #070b1b;    /* глубокий космос */
+      --bg-2: #0f1633;    /* мягкая ночь */
+      --glow-1: #6bc8ff;  /* неоновый голубой */
+      --glow-2: #a86bff;  /* неоновый фиолетовый */
+      --accent: #ffde6b;  /* золотой акцент */
+      --text: #e7e9ff;    /* базовый текст */
+      --muted: #aab0d6;   /* вторичный */
+      --glass: rgba(255,255,255,.06);
+      --glass-stroke: rgba(255,255,255,.15);
+      --radius-2xl: 24px;
+      --shadow-lg: 0 10px 30px rgba(0,0,0,.45);
+    }
+
+    /* CSS reset (не агрессивный) */
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0; color: var(--text); font: 16px/1.6 system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, sans-serif;
+      background: radial-gradient(1200px 600px at 80% -10%, rgba(168,107,255,.25), transparent 60%),
+                  radial-gradient(900px 500px at 10% -10%, rgba(107,200,255,.18), transparent 60%),
+                  linear-gradient(180deg, var(--bg-2), var(--bg-1));
+      overflow-x: hidden;
+    }
+
+    /* Звёздное небо (canvas) занимает фон */
+    #starfield {
+      position: fixed; inset: 0; z-index: -2; display: block; width: 100%; height: 100%;
+    }
+
+    /* Слабое сияние поверх звёзд */
+    .space-glow { position: fixed; inset: 0; z-index: -1; pointer-events: none;
+      background: radial-gradient(700px 500px at 15% 85%, rgba(255,222,107,.08), transparent 60%),
+                  radial-gradient(1000px 600px at 85% 20%, rgba(107,200,255,.08), transparent 60%);
+      filter: saturate(120%);
+    }
+
+    /* Навигация */
+    .nav {
+      position: sticky; top: 0; backdrop-filter: blur(10px);
+      background: linear-gradient(180deg, rgba(15,22,51,.75), rgba(15,22,51,.35));
+      border-bottom: 1px solid var(--glass-stroke);
+      z-index: 20;
+    }
+    .nav-wrap { max-width: 1200px; margin: 0 auto; padding: 14px 20px; display: flex; align-items: center; gap: 14px; }
+    .brand { font-weight: 700; letter-spacing: .5px; display: flex; align-items: center; gap: 10px; }
+    .brand .logo { width: 26px; height: 26px; border-radius: 8px; background: conic-gradient(from 180deg, var(--glow-1), var(--glow-2), var(--glow-1)); box-shadow: 0 0 24px rgba(168,107,255,.7), inset 0 0 12px rgba(107,200,255,.6); }
+    .nav-links { margin-left: auto; display: flex; gap: 14px; flex-wrap: wrap; }
+    .nav a { color: var(--muted); text-decoration: none; padding: 8px 12px; border-radius: 10px; transition: color .2s, background .2s; }
+    .nav a:hover { color: var(--text); background: var(--glass); }
+
+    /* Хиро секция */
+    .hero { position: relative; padding: 80px 20px 60px; }
+    .hero-inner { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: 1.2fr 1fr; gap: 32px; align-items: center; }
+
+    @media (max-width: 900px) {
+      .hero-inner { grid-template-columns: 1fr; }
+    }
+
+    .headline { font-size: clamp(36px, 7vw, 70px); line-height: 1.05; margin: 0 0 18px; font-weight: 800;
+      background: linear-gradient(92deg, var(--text) 0%, #d2d6ff 40%, var(--glow-1) 60%, var(--glow-2) 85%);
+      -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 10px 30px rgba(168,107,255,.18));
+    }
+
+    .subhead { font-size: clamp(16px, 2.2vw, 20px); color: var(--muted); margin: 0 0 26px; }
+
+    .cta-row { display: flex; flex-wrap: wrap; gap: 14px; }
+    .btn { --pad-x: 18px; --pad-y: 12px; position: relative; display: inline-flex; align-items: center; gap: 10px;
+      padding: var(--pad-y) var(--pad-x); border-radius: 999px; text-decoration: none; font-weight: 700; letter-spacing: .25px; cursor: pointer; border: 1px solid transparent; transition: transform .15s ease, box-shadow .3s ease, background .2s ease; }
+    .btn:active { transform: translateY(1px); }
+    .btn-primary { color: #0a0e1f; background: linear-gradient(180deg, #eaffff, #bbf3ff); box-shadow: 0 8px 24px rgba(107,200,255,.45), 0 0 0 6px rgba(107,200,255,.12) inset; }
+    .btn-primary:hover { box-shadow: 0 10px 30px rgba(107,200,255,.6), 0 0 0 8px rgba(107,200,255,.18) inset; }
+    .btn-ghost { color: var(--text); background: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.04)); border-color: var(--glass-stroke); box-shadow: 0 8px 24px rgba(0,0,0,.35), inset 0 0 0 1px rgba(255,255,255,.08); }
+    .btn-ghost:hover { background: linear-gradient(180deg, rgba(255,255,255,.12), rgba(255,255,255,.06)); }
+
+    /* Иллюстрация справа */
+    .orbital {
+      position: relative; min-height: 420px; isolation: isolate; display: grid; place-items: center;
+      border-radius: var(--radius-2xl);
+      background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));
+      border: 1px solid var(--glass-stroke); box-shadow: var(--shadow-lg);
+      overflow: hidden;
+    }
+    .planet {
+      width: 220px; height: 220px; border-radius: 50%;
+      background: radial-gradient(60% 60% at 35% 35%, #fff, #e0f6ff 35%, #b0d6ff 55%, #7a8cff 72%, #5745b5 90%, #2a1e67 100%);
+      box-shadow: 0 0 60px rgba(168,107,255,.35), inset -30px -50px 70px rgba(7,11,27,.6);
+      position: relative; transform-style: preserve-3d; animation: float 8s ease-in-out infinite;
+    }
+    .ring {
+      position: absolute; inset: 0; translate: 0 -8px; width: 360px; height: 360px; border-radius: 50%;
+      border: 6px solid transparent;
+      background: conic-gradient(from 10deg, transparent 0 35%, rgba(168,107,255,.65) 45%, rgba(107,200,255,.65) 60%, transparent 75% 100%);
+      filter: blur(.4px) drop-shadow(0 0 16px rgba(107,200,255,.35));
+      mask: radial-gradient(180px 180px at center, transparent 63%, black 64%);
+      animation: rotate 18s linear infinite;
+    }
+    @keyframes rotate { to { transform: rotate(360deg); } }
+    @keyframes float { 0%,100%{ transform: translateY(0); } 50%{ transform: translateY(-10px); } }
+
+    /* Блоки преимуществ */
+    .section { padding: 40px 20px; }
+    .features { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+    @media (max-width: 1000px) { .features { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 660px)  { .features { grid-template-columns: 1fr; } }
+
+    .card {
+      background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
+      border: 1px solid var(--glass-stroke); border-radius: 20px; padding: 22px; box-shadow: var(--shadow-lg);
+      position: relative; overflow: hidden; transition: transform .2s ease, box-shadow .2s ease;
+    }
+    .card:hover { transform: translateY(-4px); box-shadow: 0 16px 40px rgba(0,0,0,.5); }
+    .card:before {
+      content: ""; position: absolute; inset: -2px; border-radius: 22px;
+      background: radial-gradient(180px 80px at var(--mx, 50%) var(--my, -10%), rgba(107,200,255,.22), transparent 70%);
+      pointer-events: none; transition: background-position .15s; mix-blend-mode: screen;
+    }
+
+    .card h3 { margin: 0 0 6px; font-size: 20px; letter-spacing: .3px; }
+    .card p { margin: 0; color: var(--muted); }
+
+    /* Галерея/созвездия */
+    .gallery { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: repeat(12, 1fr); gap: 14px; }
+    .tile {
+      grid-column: span 4; min-height: 160px; border-radius: 18px; position: relative;
+      background: linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.03)); border: 1px solid var(--glass-stroke);
+      overflow: hidden; box-shadow: var(--shadow-lg);
+    }
+    .tile.large { grid-column: span 8; min-height: 240px; }
+    @media (max-width: 920px) { .tile { grid-column: span 6; } .tile.large { grid-column: span 12; } }
+    @media (max-width: 620px) { .tile { grid-column: span 12; } }
+
+    .tile .caption { position: absolute; left: 16px; bottom: 14px; color: var(--muted); font-weight: 600; letter-spacing: .3px; }
+
+    .orb-dot { position: absolute; width: 6px; height: 6px; background: var(--accent); border-radius: 50%; box-shadow: 0 0 14px var(--accent); }
+    .line { position: absolute; height: 2px; background: linear-gradient(90deg, transparent, var(--glow-1), transparent); opacity: .6; }
+
+    /* Футер */
+    footer { padding: 40px 20px 70px; color: var(--muted); text-align: center; }
+    .credits a { color: var(--text); text-decoration: none; border-bottom: 1px dashed rgba(255,255,255,.25); }
+
+    /* Секция CTA внизу */
+    .cta-bottom {
+      max-width: 1200px; margin: 60px auto 0; padding: 20px; border-radius: var(--radius-2xl);
+      background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
+      border: 1px solid var(--glass-stroke); display: grid; grid-template-columns: 1.2fr .8fr; gap: 20px; align-items: center;
+    }
+    .cta-bottom h3 { margin: 0 0 8px; font-size: clamp(22px, 3vw, 28px); }
+    .cta-bottom p { margin: 0 0 14px; color: var(--muted); }
+    .cta-illustration { min-height: 220px; position: relative; }
+    .pulse {
+      position: absolute; inset: 0; border-radius: 20px; pointer-events: none; filter: blur(16px);
+      background: radial-gradient(220px 120px at 70% 35%, rgba(168,107,255,.35), transparent 70%),
+                  radial-gradient(160px 100px at 20% 70%, rgba(107,200,255,.3), transparent 70%);
+      animation: pulse 5s ease-in-out infinite;
+    }
+    @keyframes pulse { 0%,100%{ opacity:.8 } 50%{ opacity: .45 } }
+
+    /* Доступность */
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); border: 0; }
+  </style>
+</head>
+<body>
+  <canvas id="starfield" aria-hidden="true"></canvas>
+  <div class="space-glow" aria-hidden="true"></div>
+
+  <header class="nav" role="navigation" aria-label="Основная навигация">
+    <div class="nav-wrap">
+      <div class="brand" aria-label="Cosmic Brand">
+        <div class="logo" aria-hidden="true"></div>
+        <span>Cosmic</span>
+      </div>
+      <nav class="nav-links">
+        <a href="#features">Особенности</a>
+        <a href="#gallery">Созвездия</a>
+        <a href="#start">Начать</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="hero-inner">
+        <div>
+          <h1 class="headline">Запусти свой проект<br/>в космос</h1>
+          <p class="subhead">Элегантная страница с живым звёздным небом, неоновыми акцентами и стеклянными карточками. Сделано с любовью к деталям и производительности.</p>
+          <div class="cta-row">
+            <a class="btn btn-primary" href="#start" aria-label="Начать сейчас">🚀 Начать</a>
+            <a class="btn btn-ghost" href="#features" aria-label="Посмотреть особенности">✨ Особенности</a>
+          </div>
+        </div>
+        <div class="orbital" aria-hidden="true">
+          <div class="planet"></div>
+          <div class="ring"></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="features" class="section" aria-label="Особенности">
+      <div class="features">
+        <article class="card"><h3>Неоновый стиль</h3><p>Мягкий градиент, акцентные подсветки и стеклянные панели создают ощущение глубины и космоса.</p></article>
+        <article class="card"><h3>Живое небо</h3><p>Canvas‑анимация звёзд с лёгким мерцанием и редкими «метеорами» без нагрузки на процессор.</p></article>
+        <article class="card"><h3>Адаптивный дизайн</h3><p>Страница прекрасно смотрится и на телефоне, и на 4K‑мониторе.</p></article>
+        <article class="card"><h3>Доступность</h3><p>Контраст, фокус‑состояния и семантическая разметка для лучшего UX.</p></article>
+        <article class="card"><h3>Лёгкая настройка</h3><p>Цвета и тени вынесены в переменные — подгоните палитру под свой бренд.</p></article>
+        <article class="card"><h3>Чистый код</h3><p>Никаких сторонних библиотек: только HTML, CSS и немного JS.</p></article>
+      </div>
+    </section>
+
+    <section id="gallery" class="section" aria-label="Созвездия">
+      <div class="gallery">
+        <div class="tile large">
+          <span class="caption">Созвездие «Идея»</span>
+          <i class="orb-dot" style="left:22%; top:30%"></i>
+          <i class="orb-dot" style="left:40%; top:60%"></i>
+          <i class="orb-dot" style="left:68%; top:42%"></i>
+          <i class="orb-dot" style="left:82%; top:68%"></i>
+          <i class="line" style="left:23%; top:31%; width:22%"></i>
+          <i class="line" style="left:40%; top:60%; width:30%"></i>
+          <i class="line" style="left:68%; top:42%; width:16%"></i>
+        </div>
+        <div class="tile"><span class="caption">Туманность «Релиз»</span></div>
+        <div class="tile"><span class="caption">Кластер «Команда»</span></div>
+        <div class="tile"><span class="caption">Пояс «Стабильность»</span></div>
+      </div>
+    </section>
+
+    <section id="start" class="section" aria-label="Начать">
+      <div class="cta-bottom">
+        <div>
+          <h3>Готовы к взлёту?</h3>
+          <p>Скопируйте этот шаблон, замените текст и цвета — и у вас уже есть стильная космическая витрина.</p>
+          <div class="cta-row">
+            <a class="btn btn-primary" href="#" onclick="alert('Поехали! 🚀')">Запуск</a>
+            <a class="btn btn-ghost" href="#top" onclick="window.scrollTo({top:0, behavior:'smooth'})">Наверх</a>
+          </div>
+        </div>
+        <div class="cta-illustration">
+          <div class="pulse" aria-hidden="true"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="credits">© <span id="year"></span> Cosmic. Сделано в космическом настроении. ⭐️</div>
+  </footer>
+
+  <script>
+    // Актуальный год
+    document.getElementById('year').textContent = new Date().getFullYear();
+
+    // Подсветка карточки по положению курсора
+    document.querySelectorAll('.card').forEach(card => {
+      card.addEventListener('pointermove', (e) => {
+        const rect = card.getBoundingClientRect();
+        card.style.setProperty('--mx', `${e.clientX - rect.left}px`);
+        card.style.setProperty('--my', `${e.clientY - rect.top}px`);
+      });
+    });
+
+    // Анимированное звёздное небо
+    (function starfield(){
+      const canvas = document.getElementById('starfield');
+      const ctx = canvas.getContext('2d');
+      let w, h, stars, meteors, scale = devicePixelRatio || 1;
+
+      function resize(){
+        w = canvas.width = Math.floor(innerWidth * scale);
+        h = canvas.height = Math.floor(innerHeight * scale);
+        canvas.style.width = innerWidth + 'px';
+        canvas.style.height = innerHeight + 'px';
+        createStars();
+      }
+
+      function createStars(){
+        const density = Math.min(260, Math.floor((innerWidth*innerHeight)/9000));
+        stars = new Array(density).fill(0).map(()=>({
+          x: Math.random()*w,
+          y: Math.random()*h,
+          r: Math.random()*1.8 + 0.2,
+          a: Math.random()*0.7 + 0.3,
+          tw: Math.random()*0.02 + 0.002
+        }));
+        meteors = [];
+      }
+
+      function spawnMeteor(){
+        if (Math.random() < 0.015 && meteors.length < 3) {
+          const fromTop = Math.random() < 0.5;
+          const startX = Math.random()*w*0.6 + w*0.2;
+          const startY = fromTop ? -20 : Math.random()*h*0.3;
+          meteors.push({ x: startX, y: startY, vx: -6*scale, vy: 3*scale, life: 0, maxLife: 1600 });
+        }
+      }
+
+      function draw(){
+        ctx.clearRect(0,0,w,h);
+        // лёгкая дымка космоса
+        const grad = ctx.createRadialGradient(w*0.8, h*0.1, 0, w*0.8, h*0.1, Math.max(w,h)*0.9);
+        grad.addColorStop(0, 'rgba(168,107,255,0.03)');
+        grad.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.fillStyle = grad; ctx.fillRect(0,0,w,h);
+
+        // звёзды
+        stars.forEach(s => {
+          s.a += s.tw; const pulse = (Math.sin(s.a*6.283)+1)/2; // 0..1
+          ctx.globalAlpha = 0.35 + pulse*0.65;
+          ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI*2);
+          ctx.fillStyle = '#ffffff'; ctx.fill();
+        });
+        ctx.globalAlpha = 1;
+
+        // метеоры
+        spawnMeteor();
+        for (let i = meteors.length-1; i>=0; i--) {
+          const m = meteors[i];
+          m.x += m.vx; m.y += m.vy; m.life += 16;
+          // хвост
+          const grad2 = ctx.createLinearGradient(m.x, m.y, m.x - m.vx*12, m.y - m.vy*12);
+          grad2.addColorStop(0, 'rgba(255,255,255,0.9)');
+          grad2.addColorStop(1, 'rgba(107,200,255,0)');
+          ctx.strokeStyle = grad2; ctx.lineWidth = 2*scale; ctx.beginPath();
+          ctx.moveTo(m.x, m.y); ctx.lineTo(m.x - m.vx*8, m.y - m.vy*8); ctx.stroke();
+          // голова
+          ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.arc(m.x, m.y, 1.8*scale, 0, Math.PI*2); ctx.fill();
+          if (m.x < -50 || m.y > h+50 || m.life > m.maxLife) meteors.splice(i,1);
+        }
+
+        requestAnimationFrame(draw);
+      }
+
+      addEventListener('resize', resize, { passive: true });
+      resize();
+      draw();
+    })();
+  </script>
+</body>
+</html>
