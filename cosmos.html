@@ -139,6 +139,29 @@
     @media (max-width: 620px) { .tile { grid-column: span 12; } }
 
     .tile .caption { position: absolute; left: 16px; bottom: 14px; color: var(--muted); font-weight: 600; letter-spacing: .3px; }
+    
+    /* Иконки созвездий */
+    .constellation-icon {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      font-size: 32px;
+      opacity: 0.8;
+      transition: all 0.3s ease;
+      filter: drop-shadow(0 0 8px rgba(107,200,255,.4));
+      animation: constellation-glow 3s ease-in-out infinite;
+    }
+    
+    .tile:hover .constellation-icon {
+      opacity: 1;
+      transform: scale(1.1);
+      filter: drop-shadow(0 0 12px rgba(168,107,255,.6));
+    }
+    
+    @keyframes constellation-glow {
+      0%, 100% { filter: drop-shadow(0 0 8px rgba(107,200,255,.4)); }
+      50% { filter: drop-shadow(0 0 12px rgba(168,107,255,.6)); }
+    }
 
     .orb-dot { position: absolute; width: 6px; height: 6px; background: var(--accent); border-radius: 50%; box-shadow: 0 0 14px var(--accent); }
     .line { position: absolute; height: 2px; background: linear-gradient(90deg, transparent, var(--glow-1), transparent); opacity: .6; }
@@ -250,6 +273,7 @@
     <section id="gallery" class="section" aria-label="Созвездия">
       <div class="gallery">
         <div class="tile large">
+          <div class="constellation-icon">💡</div>
           <span class="caption">Созвездие «Идея»</span>
           <i class="orb-dot" style="left:22%; top:30%"></i>
           <i class="orb-dot" style="left:40%; top:60%"></i>
@@ -259,9 +283,18 @@
           <i class="line" style="left:40%; top:60%; width:30%"></i>
           <i class="line" style="left:68%; top:42%; width:16%"></i>
         </div>
-        <div class="tile"><span class="caption">Туманность «Релиз»</span></div>
-        <div class="tile"><span class="caption">Кластер «Команда»</span></div>
-        <div class="tile"><span class="caption">Пояс «Стабильность»</span></div>
+        <div class="tile">
+          <div class="constellation-icon">🌌</div>
+          <span class="caption">Туманность «Релиз»</span>
+        </div>
+        <div class="tile">
+          <div class="constellation-icon">👥</div>
+          <span class="caption">Кластер «Команда»</span>
+        </div>
+        <div class="tile">
+          <div class="constellation-icon">⚡</div>
+          <span class="caption">Пояс «Стабильность»</span>
+        </div>
       </div>
     </section>
 
